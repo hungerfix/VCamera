@@ -3,12 +3,12 @@ name: Build Release APK
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:  # Allows manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
     name: Build Release APK
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - name: Checkout repository (with submodules)
@@ -41,6 +41,19 @@ jobs:
           EOF
           chmod +x gradlew
 
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK build tools 31
+        run: |
+          sdkmanager "build-tools;31.0.0" "platforms;android-31"
+
+      - name: Add gradle.properties suppressions
+        run: |
+          echo "android.suppressUnsupportedCompileSdk=33" >> gradle.properties
+          echo "android.useAndroidX=true" >> gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
+
       - name: Build Release APK
         run: ./gradlew assembleRelease --stacktrace
 
@@ -54,9 +67,9 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
         env:
-          BUILD_TOOLS_VERSION: "34.0.0"
+          BUILD_TOOLS_VERSION: "31.0.0"
 
-      - name: Upload signed APK as artifact
+      - name: Upload signed APK
         uses: actions/upload-artifact@v4
         with:
           name: VCamera-release-signed
